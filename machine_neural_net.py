@@ -24,8 +24,8 @@ class NeuralNetwork:
     output = []
     for i in range(self.sizes[layer+1]):
       o = 0
-      for j in range(len(input)):
-        o += input[j]*self.weights[layer][j]
+      for j in range(self.sizes[layer]):
+        o += input[j]*self.weights[layer][j+(self.sizes[layer]*i)]
       output.append(self.sigmoid(o+self.biases[layer][i]))
     return output
   #Back propogation algorithm to adjust weights and biases based on target values and neural network outputs
@@ -37,7 +37,7 @@ class NeuralNetwork:
     for i in range(self.sizes[2]): #For each output layer node output, compute its error
       delta_k.append(O_k[i]*(1-O_k[i])*(O_k[i] - output[i]))
     delta_j = [] #Hidden Layer Error
-    for i in range(self.sizes[1]): #For each hidden layer node output, computes its error
+    for i in range(self.sizes[1]): #For each hidden layer node output, compute its error
       sum = 0
       for j in range(self.sizes[2]): #For each output layer node, compute the product of the output error, delta_k, and weight from node in layer j to layer k
         sum += delta_k[j]*self.weights[1][i]
@@ -47,9 +47,9 @@ class NeuralNetwork:
     for w in range(len(self.weights)):
       for l in range(len(self.weights[w])):
         if w == 0: #Hard code cases since deltas are in seperate arrays
-          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_j[0]*input[l]#??
+          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_j[int(l/self.sizes[w])]*input[l%self.sizes[w]]
         elif w == 1:
-          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_k[0]*O_j[l] #?
+          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_k[int(l/self.sizes[w])]*O_j[l%self.sizes[w]]
         
     #Adjusts Biases
     for b in range(len(self.biases)):
@@ -74,7 +74,8 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     input = line.split(",")
     outputs.append(np.array(map(float,input[7:])))
     inputs.append(np.array(map(float,input[:7])))
-#net.backpropogate(inputs[0],outputs[0])
+print net.weights
+net.backpropogate(inputs[0],outputs[0])
+print net.weights
 #5 Fold Cross Validation
 #...
-  
