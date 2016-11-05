@@ -2,7 +2,7 @@
 import math
 import numpy as np
 class NeuralNetwork:
-  def __init__(self, sizes,learning_rate):
+  def __init__(self,sizes,learning_rate):
     self.layers = len(sizes)
     self.sizes = sizes
     self.learning_rate = learning_rate
@@ -16,7 +16,8 @@ class NeuralNetwork:
     for i in range(len(sizes)-1):
       w = []
       for j in range(sizes[i]):
-        w.append(np.random.randn())
+        for k in range(sizes[i+1]):
+          w.append(np.random.randn())
       self.weights.append(w)
   #Propogate input data foward by one layer, starting with input data from layer ending in output data in layer+1   
   def forwardpropogate(self,input,layer):
@@ -46,9 +47,9 @@ class NeuralNetwork:
     for w in range(len(self.weights)):
       for l in range(len(self.weights[w])):
         if w == 0: #Hard code cases since deltas are in seperate arrays
-          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_j[0]*input[l]
+          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_j[0]*input[l]#??
         elif w == 1:
-          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_k[0]*O_j[l]
+          self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_k[0]*O_j[l] #?
         
     #Adjusts Biases
     for b in range(len(self.biases)):
@@ -65,11 +66,15 @@ class NeuralNetwork:
     return 1/(1+np.exp(-z))
   
 net = NeuralNetwork([7,3,1],0.1)
+inputs = []
+outputs = []
 import sys
 with open(sys.argv[1],'r') as f: #Import normalized data
   for line in f: #Each line in data is 7 input values, and 1 target output value, delimited by commas
     input = line.split(",")
-    output = np.array(map(float,input[7:]))
-    input = np.array(map(float,input[:7]))
-    net.backpropogate(input,output)
-    break    
+    outputs.append(np.array(map(float,input[7:])))
+    inputs.append(np.array(map(float,input[:7])))
+#net.backpropogate(inputs[0],outputs[0])
+#5 Fold Cross Validation
+#...
+  
