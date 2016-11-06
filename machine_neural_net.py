@@ -53,7 +53,7 @@ class NeuralNetwork:
     #Adjust Weights
     for w in range(len(self.weights)):
       for l in range(len(self.weights[w])):
-        if w == 0: #Hard code cases since deltas are in seperate arrays
+        if w == 0: #Hard code cases since deltas are in seperate arrays, better implementation would've been 2-d Array
           self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_j[int(l/self.sizes[w])]*input[l%self.sizes[w]]
         elif w == 1:
           self.weights[w][l] = self.weights[w][l]-(self.learning_rate)*delta_k[int(l/self.sizes[w])]*O_j[l%self.sizes[w]]
@@ -65,33 +65,68 @@ class NeuralNetwork:
         elif b == 1:
           self.biases[b][l] = self.biases[b][l]-(self.learning_rate)*(delta_k)[l]
     #End backpropogation algorithm
+  
+  def train(self,training_data):
+    below_Error_Thresh = False
+    counter = 0
+    while not below_Error_Thresh:
+      below_Error_Thresh = True
+      for i in range(len(training_data)):
+        counter+=1
+        inp = training_data[i][:7]
+        out = training_data[i][7:]
+        self.backpropogate(inp,out)
+        if self.validate(training_data[i]) >= self.error_threshhold:
+          below_Error_Thresh = False
+    return "Trained {} because of error on a fold".format(counter)    
+    
   #Validate accuracy of model given validation set
-  def validate(self,validation_set,target_set):
+  def validate(self,data):
+    validation_set = data[:7]
+    target_set = data[7:]
     output = self.forwardpropogate(validation_set,0)
     output = self.forwardpropogate(output,1)
-    return self.calculate_error(output[0],target_set[0])
+    return abs(output[0]-target_set[0])
+    #return self.calculate_error(output[0],target_set[0])
     
   @staticmethod
   #Our squashing/logistic/activation function given input vector z
   def sigmoid(z):
     return 1/(1+np.exp(-z))
-  
-inputs = []
-outputs = []
+    
+data = []  
 import sys
 with open(sys.argv[1],'r') as f: #Import normalized data
   for line in f: #Each line in data is 7 input values, and 1 target output value, delimited by commas
     input = line.split(",")
-    outputs.append(np.array(map(float,input[7:])))
-    inputs.append(np.array(map(float,input[:7])))
+    data.append(np.array(map(float,input)))
 #N-Fold Cross Validation
+  net_out = open("neural_network_parameters.txt","w")
   n = 5
-  net = NeuralNetwork([7,3,1],0.1,0.01)
+  folds = []
+  for f in range(n):
+    folds.append([])
+  for i in range(len(data)):  #Create Folds
+    for f in range(n):
+      if int(i/42) != f:
+        folds[f].append(data[i])
+  #Begin Cross Validation
   for i in range(n):
-    for j in range(len(inputs)):  #Training Sets
-      if j<i*42 or j>(i+1)*42: #42 as the number of data points in each fold ~(209/5)
-        net.backpropogate(inputs[j],outputs[j])  
-    for j in range(len(inputs)): #Validation Set
-      if j>=i*42 or j<=(i+1)*42:
-        print net.validate(inputs[j],outputs[j])
-    print "\n"
+    net_out.write("Epoch {}\n".format(i))
+    net = NeuralNetwork([7,3,1],0.5,0.1)
+    for j in range(n):  #Train on all n-1 folds
+      if i != j:
+        net_out.write("{}".format(net.train(folds[j])))
+    #net.validate(folds[i]) #Validate on 1 fold
+    for k in range(len(net.weights)):
+      net_out.write("Weights: \n")
+      for k2 in range(len(net.weights[k])):
+        net_out.write("{} ".format(net.weights[k][k2]))
+      net_out.write("\n")
+    for b in range(len(net.biases)):
+      net_out.write("Biases: \n")
+      for b2 in range(len(net.biases[b])):
+        net_out.write("{} ".format(net.biases[b][b2]))
+      net_out.write("\n")
+    net_out.write("____________________________________\n")
+    
