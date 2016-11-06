@@ -78,7 +78,7 @@ class NeuralNetwork:
         self.backpropogate(inp,out)
         if self.validate(training_data[i]) >= self.error_threshhold:
           below_Error_Thresh = False
-    return "Trained {} because of error on a fold".format(counter)    
+    return "Trained {} on this fold\n".format(counter)    
     
   #Validate accuracy of model given validation set
   def validate(self,data):
@@ -86,8 +86,8 @@ class NeuralNetwork:
     target_set = data[7:]
     output = self.forwardpropogate(validation_set,0)
     output = self.forwardpropogate(output,1)
-    return abs(output[0]-target_set[0])
-    #return self.calculate_error(output[0],target_set[0])
+    #return abs(output[0]-target_set[0])
+    return self.calculate_error(output[0],target_set[0])
     
   @staticmethod
   #Our squashing/logistic/activation function given input vector z
@@ -101,7 +101,7 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     input = line.split(",")
     data.append(np.array(map(float,input)))
 #N-Fold Cross Validation
-  net_out = open("neural_network_parameters.txt","w")
+  net_out = open("neural_network_parameters_0.1.txt","w")
   n = 5
   folds = []
   for f in range(n):
@@ -117,7 +117,14 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     for j in range(n):  #Train on all n-1 folds
       if i != j:
         net_out.write("{}".format(net.train(folds[j])))
-    #net.validate(folds[i]) #Validate on 1 fold
+    error = 0 #Validate on 1 fold
+    net_out.write("Validation Results: \n")
+    for f in range(len(folds[i])):
+      out = net.forwardpropogate(net.forwardpropogate(folds[i][f][:7],0),1)
+      net_out.write("{} {}\n".format(out[0],folds[i][f][7:][0]))
+      error += net.validate(folds[i][f])
+    net_out.write("Average test error: {}\n".format(error/len(folds[i])))
+    #Output the trained neural network for this epoch
     for k in range(len(net.weights)):
       net_out.write("Weights: \n")
       for k2 in range(len(net.weights[k])):
@@ -129,4 +136,4 @@ with open(sys.argv[1],'r') as f: #Import normalized data
         net_out.write("{} ".format(net.biases[b][b2]))
       net_out.write("\n")
     net_out.write("____________________________________\n")
-    
+  net_out.close()  
