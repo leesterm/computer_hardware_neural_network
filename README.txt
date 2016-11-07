@@ -1,5 +1,6 @@
 Program was tested and ran using Python 2.7.12
 Dependencies: numpy
+Data from: http://archive.ics.uci.edu/ml/machine-learning-databases/cpu-performance/machine.data
 There are 3 programs:
   -machine_neural_net.py
     The main program which includes the NeuralNetwork class and implementation of back propogation
