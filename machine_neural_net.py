@@ -68,17 +68,18 @@ class NeuralNetwork:
   
   def train(self,training_data):
     below_Error_Thresh = False
-    counter = 0
+    error_output = []
     while not below_Error_Thresh:
       below_Error_Thresh = True
+      error = 0
       for i in range(len(training_data)):
-        counter+=1
-        inp = training_data[i][:7]
-        out = training_data[i][7:]
-        self.backpropogate(inp,out)
+        self.backpropogate(training_data[i][:7],training_data[i][7:])
+        error += self.validate(training_data[i]) #Calculate the total output error for this iteration of training
         if self.validate(training_data[i]) >= self.error_threshhold:
           below_Error_Thresh = False
-    return "Trained {} on this fold\n".format(counter)    
+      error_output.append(error)    
+    #Return output error data to be plotted
+    return error_output
     
   #Validate accuracy of model given validation set
   def validate(self,data):
@@ -90,7 +91,7 @@ class NeuralNetwork:
     return self.calculate_error(output[0],target_set[0])
     
   @staticmethod
-  #Our squashing/logistic/activation function given input vector z
+  #Our squashing/logistic/activation function given input z
   def sigmoid(z):
     return 1/(1+np.exp(-z))
     
@@ -101,7 +102,8 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     input = line.split(",")
     data.append(np.array(map(float,input)))
 #N-Fold Cross Validation
-  net_out = open("neural_network_parameters_0.1.txt","w")
+  net_out = open("neural_network_parameters_0.001.txt","w")
+  error_out = open("neural_network_error_output_0.001.txt","w")
   n = 5
   folds = []
   for f in range(n):
@@ -112,11 +114,14 @@ with open(sys.argv[1],'r') as f: #Import normalized data
         folds[f].append(data[i])
   #Begin Cross Validation
   for i in range(n):
-    net_out.write("Epoch {}\n".format(i))
-    net = NeuralNetwork([7,3,1],0.5,0.1)
+    net_out.write("Fold {}\n".format(i))
+    net = NeuralNetwork([7,3,1],0.5,0.001)
     for j in range(n):  #Train on all n-1 folds
       if i != j:
-        net_out.write("{}".format(net.train(folds[j])))
+        error_output = net.train(folds[j])
+        for e in range(len(error_output)):
+          error_out.write("{}\n".format(error_output[e]))
+    error_out.write("_______________\n")      
     error = 0 #Validate on 1 fold
     net_out.write("Validation Results: \n")
     for f in range(len(folds[i])):
@@ -136,4 +141,5 @@ with open(sys.argv[1],'r') as f: #Import normalized data
         net_out.write("{} ".format(net.biases[b][b2]))
       net_out.write("\n")
     net_out.write("____________________________________\n")
-  net_out.close()  
+  net_out.close()
+  error_out.close()
