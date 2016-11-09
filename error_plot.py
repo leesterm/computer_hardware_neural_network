@@ -7,7 +7,6 @@ index = []
 count = 0
 average = 0
 plt.subplot(111)
-
 import sys 
 with open(sys.argv[1],'r') as f:
   for line in f:
@@ -31,5 +30,22 @@ plt.xticks(error_threshold,[0.1,0.01,0.001,0.0001,0.00001,0.000001])
 plt.ylabel('Error')
 plt.ylim([0,.65])
 plt.figure()
+'''
+predicted = []
+target = []
+index = []
+count = 1
+import sys 
+with open('1e-05_testing.txt','r') as f:
+  for line in f:
+    d = str.split(line," ")
+    predicted.append(d[0])
+    target.append(d[1])
+    index.append(count)
+    count+=1
+plt.plot(np.array(index),np.array(predicted))
+plt.plot(np.array(index),np.array(target))
+plt.xlabel("Tests")
+plt.ylabel("Predicted/Target CPU Performance")
 plt.show()
-  
+'''  
