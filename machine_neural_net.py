@@ -102,8 +102,9 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     input = line.split(",")
     data.append(np.array(map(float,input)))
 #N-Fold Cross Validation
-  net_out = open("neural_network_parameters_0.001.txt","w")
-  error_out = open("neural_network_error_output_0.001.txt","w")
+  net_out = open("nn_parameters_0.1.txt","w")
+  training_out = open("training_error_0.1.txt","w")
+  testing_out = open("testing_0.1","w")
   n = 5
   folds = []
   for f in range(n):
@@ -115,7 +116,7 @@ with open(sys.argv[1],'r') as f: #Import normalized data
   #Begin Cross Validation
   for i in range(n):
     net_out.write("Fold {}\n".format(i))
-    net = NeuralNetwork([7,3,1],0.5,0.001)
+    net = NeuralNetwork([7,3,1],0.5,0.1)
     for j in range(n):  #Train on all n-1 folds
       if i != j:
         error_output = net.train(folds[j])
