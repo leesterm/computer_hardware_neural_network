@@ -24,7 +24,7 @@ class NeuralNetwork:
   #Calculate error using mean squared error function
   def calculate_error(self,output,target):
     return (0.5)*(pow((output-target),2))
-  
+   
   #Propogate input data foward by one layer, starting with input data from layer ending in output data in layer+1   
   def forwardpropogate(self,input,layer):
     output = []
@@ -78,8 +78,8 @@ class NeuralNetwork:
       target_data = data[i][7:]      
       output = self.forwardpropogate(validation,0)
       output = self.forwardpropogate(output,1)
-      total_error = self.calculate_error(output[0],target_data[0])
-    out.write("{}|{}".format(epoch,total_error))
+      total_error += self.calculate_error(output[0],target_data[0])
+    out.write("{}|{}\n".format(epoch,total_error))
     if total_error > self.error_threshold:
       return False
     else:
@@ -112,11 +112,12 @@ with open(sys.argv[1],'r') as f: #Import normalized data
   for line in f: #Each line in data is 7 input values, and 1 target output value, delimited by commas
     input = line.split(",")
     data.append(np.array(map(float,input)))
-  net = NeuralNetwork([7,3,1],0.5,0.1)
+  err_thresh = float(sys.argv[2])
+  net = NeuralNetwork([7,3,1],0.5,err_thresh)
   #N-Fold Cross Validation
-  net_out = open("0.1_nn_parameters.txt","w")
-  training_out = open("0.1_training_error.txt","w")
-  testing_out = open("0.1_testing.txt","w")
+  net_out = open("{}_nn_parameters.txt".format(err_thresh),"w")
+  training_out = open("{}_training_error.txt".format(err_thresh),"w")
+  testing_out = open("{}_testing.txt".format(err_thresh),"w")
   n = 5
   testing = []
   training_validation = []
@@ -134,7 +135,7 @@ with open(sys.argv[1],'r') as f: #Import normalized data
     net.train((training_validation[:126]))#Hard code 126, Better implementation would be length of training validation set - length of training validation set / n-1
     below_error_thresh = net.validate(training_validation[126:],epoch,training_out)
     epoch += 1
-    if below_error_thresh:
+    if below_error_thresh == True:
       break
   #Begin testing
   net.test(testing,testing_out)
