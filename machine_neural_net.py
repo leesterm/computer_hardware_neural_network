@@ -2,11 +2,11 @@
 import math
 import numpy as np
 class NeuralNetwork:
-  def __init__(self,sizes,learning_rate,error_threshhold):
+  def __init__(self,sizes,learning_rate,error_threshold):
     self.layers = len(sizes)
     self.sizes = sizes
     self.learning_rate = learning_rate
-    self.error_threshhold = error_threshhold
+    self.error_threshold = error_threshold
     self.biases = []
     for i in range(1,len(sizes)):
       b = []
@@ -67,28 +67,39 @@ class NeuralNetwork:
     #End backpropogation algorithm
   
   def train(self,training_data):
-    below_Error_Thresh = False
-    error_output = []
-    while not below_Error_Thresh:
-      below_Error_Thresh = True
-      error = 0
-      for i in range(len(training_data)):
-        self.backpropogate(training_data[i][:7],training_data[i][7:])
-        error += self.validate(training_data[i]) #Calculate the total output error for this iteration of training
-        if self.validate(training_data[i]) >= self.error_threshhold:
-          below_Error_Thresh = False
-      error_output.append(error)    
-    #Return output error data to be plotted
-    return error_output
+    for i in range(len(training_data)):
+      self.backpropogate(training_data[i][:7],training_data[i][7:])
+        
+  #Validate accuracy of current model given validation set
+  def validate(self,data,epoch,out):
+    total_error = 0
+    for i in range(len(data)):
+      validation = data[i][:7]
+      target_data = data[i][7:]      
+      output = self.forwardpropogate(validation,0)
+      output = self.forwardpropogate(output,1)
+      total_error = self.calculate_error(output[0],target_data[0])
+    out.write("{}|{}".format(epoch,total_error))
+    if total_error > self.error_threshold:
+      return False
+    else:
+      return True
     
-  #Validate accuracy of model given validation set
-  def validate(self,data):
-    validation_set = data[:7]
-    target_set = data[7:]
-    output = self.forwardpropogate(validation_set,0)
-    output = self.forwardpropogate(output,1)
-    #return abs(output[0]-target_set[0])
-    return self.calculate_error(output[0],target_set[0])
+  #After training and validation, provide unseen testing date as a final evaluation of accuracy
+  def test(self,data,output):
+    output.write("Testing\n")
+    output.write("Output | Target | MSE\n")
+    total_error = 0
+    for i in range(len(data)):
+      test_data = data[i][:7]
+      target_data = data[i][7:]
+      test_output = self.forwardpropogate(test_data,0)
+      test_output = self.forwardpropogate(test_output,1)
+      error = self.calculate_error(test_output[0],target_data[0])
+      total_error += error
+      output.write("{} {} {}\n".format(test_output[0],target_data[0],error))
+    output.write("Total MSE: {}\n".format(total_error))
+    output.write("Average MSE: {}".format(total_error/len(data)))
     
   @staticmethod
   #Our squashing/logistic/activation function given input z
@@ -101,46 +112,44 @@ with open(sys.argv[1],'r') as f: #Import normalized data
   for line in f: #Each line in data is 7 input values, and 1 target output value, delimited by commas
     input = line.split(",")
     data.append(np.array(map(float,input)))
-#N-Fold Cross Validation
-  net_out = open("nn_parameters_0.1.txt","w")
-  training_out = open("training_error_0.1.txt","w")
-  testing_out = open("testing_0.1","w")
+  net = NeuralNetwork([7,3,1],0.5,0.1)
+  #N-Fold Cross Validation
+  net_out = open("0.1_nn_parameters.txt","w")
+  training_out = open("0.1_training_error.txt","w")
+  testing_out = open("0.1_testing.txt","w")
   n = 5
-  folds = []
-  for f in range(n):
-    folds.append([])
-  for i in range(len(data)):  #Create Folds
-    for f in range(n):
-      if int(i/42) != f:
-        folds[f].append(data[i])
-  #Begin Cross Validation
-  for i in range(n):
-    net_out.write("Fold {}\n".format(i))
-    net = NeuralNetwork([7,3,1],0.5,0.1)
-    for j in range(n):  #Train on all n-1 folds
-      if i != j:
-        error_output = net.train(folds[j])
-        for e in range(len(error_output)):
-          error_out.write("{}\n".format(error_output[e]))
-    error_out.write("_______________\n")      
-    error = 0 #Validate on 1 fold
-    net_out.write("Validation Results: \n")
-    for f in range(len(folds[i])):
-      out = net.forwardpropogate(net.forwardpropogate(folds[i][f][:7],0),1)
-      net_out.write("{} {}\n".format(out[0],folds[i][f][7:][0]))
-      error += net.validate(folds[i][f])
-    net_out.write("Average test error: {}\n".format(error/len(folds[i])))
-    #Output the trained neural network for this epoch
-    for k in range(len(net.weights)):
-      net_out.write("Weights: \n")
-      for k2 in range(len(net.weights[k])):
-        net_out.write("{} ".format(net.weights[k][k2]))
-      net_out.write("\n")
-    for b in range(len(net.biases)):
-      net_out.write("Biases: \n")
-      for b2 in range(len(net.biases[b])):
-        net_out.write("{} ".format(net.biases[b][b2]))
-      net_out.write("\n")
-    net_out.write("____________________________________\n")
+  testing = []
+  training_validation = []
+  for i in range(len(data)):
+    if i < len(data)/n:
+      testing.append(data[i])
+    else:
+      training_validation.append(data[i])
+  #Begin training and validating
+  epoch = 0
+  while True:
+    #First randomly reorder the training and validation array in order to avoid over training over training due to the same training sets
+    for i in range(len(training_validation)):
+      training_validation[i] = training_validation[np.random.randint(0,len(training_validation)-1)]
+    net.train((training_validation[:126]))#Hard code 126, Better implementation would be length of training validation set - length of training validation set / n-1
+    below_error_thresh = net.validate(training_validation[126:],epoch,training_out)
+    epoch += 1
+    if below_error_thresh:
+      break
+  #Begin testing
+  net.test(testing,testing_out)
+  #Output our weights and biases for our trained neural network
+  for k in range(len(net.weights)):
+    net_out.write("Weights: \n")
+    for k2 in range(len(net.weights[k])):
+      net_out.write("{} ".format(net.weights[k][k2]))
+    net_out.write("\n")
+  for b in range(len(net.biases)):
+    net_out.write("Biases: \n")
+    for b2 in range(len(net.biases[b])):
+      net_out.write("{} ".format(net.biases[b][b2]))
+    net_out.write("\n")
+    
   net_out.close()
-  error_out.close()
+  training_out.close()
+  testing_out.close()
